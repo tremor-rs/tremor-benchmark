@@ -55,3 +55,16 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: clippy
+
+  cargo_bloat:
+    name: Bloat
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+      - name: Run cargo bloat
+        uses: orf/cargo-bloat-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
