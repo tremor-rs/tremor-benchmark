@@ -1,0 +1,5 @@
+[package]
+name = "benchmark_data"
+version = "0.1.0"
+authors = ["Akshat Agarwal <humancalico@disroot.org>"]
+edition = "2018"
