@@ -11,3 +11,4 @@ categories = ["Benchmarking"]
 
 [dependencies]
 color-eyre = "0.5.10"
+clap = "3.0.0-beta.2"
