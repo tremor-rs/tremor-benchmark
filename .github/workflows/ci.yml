@@ -15,7 +15,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: check
-          args: --frozen --locked
+          args: --locked
 
   test:
     name: Test Suite
