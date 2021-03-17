@@ -69,6 +69,7 @@ use clap::{crate_authors, crate_version, Clap};
 use color_eyre::eyre::Result;
 
 use std::path::PathBuf;
+use std::process::Command;
 
 /// This is utility used to run tremor benchmarks, store them in a structured format and generate
 /// beautiful graphs based on historical data
@@ -84,7 +85,19 @@ fn main() -> Result<()> {
 
     let opts: Opts = Opts::parse();
 
-    println!("The root directory of tremor is {:?}", opts.root);
+    // FIXME Currently tremor's bench command doens't allow to run benchmarks to be run from other than
+    // the project's root directory. See https://github.com/tremor-rs/tremor-runtime/issues/842
+
+    // Change the current directory to tremor's root directory
+    std::env::set_current_dir(&opts.root)?;
+
+    // TODO Don't spawn process like this use the upstream code instead, it would be easier to
+    // integrate in the future
+    let output = Command::new("./target/release/tremor")
+        .args(&["test", "bench", "./tremor-cli/tests/bench"])
+        .output();
+
+    dbg!(output?);
 
     Ok(())
 }
