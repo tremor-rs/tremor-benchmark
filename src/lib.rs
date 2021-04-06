@@ -141,6 +141,10 @@ pub fn convert_into_relevant_data(whole_report: WholeReport) -> Result<Data> {
     })
 }
 
+pub fn serialize(data: &Data) -> Result<String> {
+    Ok(serde_json::to_string(data)?)
+}
+
 // Run the benchmarks and store them in a report.json
 // TODO Write tests for this
 fn run_benchmark<S>(project_root: S) -> Result<String>
