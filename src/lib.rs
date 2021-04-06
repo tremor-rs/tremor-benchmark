@@ -1,3 +1,4 @@
+use chrono::offset::Utc;
 use color_eyre::eyre::Result;
 use serde::Deserialize;
 use serde_json::de;
@@ -98,6 +99,10 @@ where
         .stdout;
     let output = std::str::from_utf8(&output)?.trim();
     Ok(output.into())
+}
+
+fn date_and_time() -> String {
+    Utc::now().to_string()
 }
 
 // Run the benchmarks and store them in a report.json
