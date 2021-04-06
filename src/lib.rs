@@ -1,7 +1,17 @@
 use color_eyre::eyre::Result;
+
 use std::fs;
 use std::path::Path;
 use std::process::Command;
+
+// Run the benchmarks and store them in a report.json
+// TODO Write tests for this
+fn run_benchmark<S>(project_root: S) -> Result<String>
+where
+    S: AsRef<Path>,
+{
+    run_benchmark_with_tags(project_root, &[])
+}
 
 // Currently there is no good way to run benchmarks knowing only their name so tags are used.
 // This should be a feature in the upstream CLI
