@@ -1,7 +1,7 @@
 use chrono::offset::Utc;
 use color_eyre::eyre::Result;
 use serde::Deserialize;
-use serde_json::de;
+use serde::Serialize;
 
 use std::fs;
 use std::path::Path;
@@ -103,6 +103,42 @@ where
 
 fn date_and_time() -> String {
     Utc::now().to_string()
+}
+
+#[derive(Serialize, Debug)]
+pub struct Data {
+    created_at: String,
+    commit_hash: String,
+    benchmarks: Vec<Benchmark>,
+}
+
+impl Data {
+    fn new() -> Self {
+        todo!()
+    }
+}
+
+#[derive(Serialize, Debug)]
+struct Benchmark {
+    name: String,
+    throughput: f64,
+}
+
+pub fn convert_into_relevant_data(whole_report: WholeReport) -> Result<Data> {
+    let mut benchmarks: Vec<Benchmark> = vec![];
+    for report in whole_report.reports.bench {
+        // TODO add a check if benchmark has passed or failed
+        let name = report.elements.bench.name;
+        let throughput = extract_throughput(&report.elements.bench.evidence.stdout).unwrap();
+        benchmarks.push(Benchmark { name, throughput });
+    }
+    let commit_hash = find_commit_hash("/home/humancalico/tremor-runtime")?;
+    let created_at = date_and_time();
+    Ok(Data {
+        created_at,
+        commit_hash,
+        benchmarks,
+    })
 }
 
 // Run the benchmarks and store them in a report.json
