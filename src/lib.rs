@@ -86,6 +86,20 @@ pub fn deserialize(report: &str) -> Result<WholeReport> {
     Ok(report)
 }
 
+// Here path is the path of the git directory
+fn find_commit_hash<S>(dir: S) -> Result<String>
+where
+    S: AsRef<Path>,
+{
+    let output = Command::new("git")
+        .args(&["rev-parse", "HEAD"])
+        .current_dir(dir)
+        .output()?
+        .stdout;
+    let output = std::str::from_utf8(&output)?.trim();
+    Ok(output.into())
+}
+
 // Run the benchmarks and store them in a report.json
 // TODO Write tests for this
 fn run_benchmark<S>(project_root: S) -> Result<String>
