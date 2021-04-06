@@ -1,8 +1,90 @@
 use color_eyre::eyre::Result;
+use serde::Deserialize;
+use serde_json::de;
 
 use std::fs;
 use std::path::Path;
 use std::process::Command;
+
+// TODO The name is horrible here. pls help
+#[derive(Deserialize, Debug)]
+pub struct WholeReport {
+    metadata: Metadata,
+    includes: Vec<String>,
+    excludes: Vec<String>,
+    reports: Reports,
+    stats: Stats,
+}
+
+#[derive(Deserialize, Debug)]
+struct Reports {
+    bench: Vec<SingleReport>,
+}
+
+#[derive(Deserialize, Debug)]
+struct SingleReport {
+    description: String,
+    elements: Element,
+}
+
+#[derive(Deserialize, Debug)]
+struct Element {
+    bench: Bench,
+}
+
+#[derive(Deserialize, Debug)]
+struct Bench {
+    name: String,
+    description: String,
+    elements: Vec<String>,
+    evidence: Evidence,
+    stats: Stat,
+    duration: usize,
+}
+
+#[derive(Deserialize, Debug)]
+struct Evidence {
+    #[serde(rename = "test: stdout")]
+    stdout: String,
+    #[serde(rename = "test: stderr")]
+    stderr: String,
+}
+
+#[derive(Deserialize, Debug)]
+struct Metadata {
+    allocator: String,
+    repository: String,
+    description: String,
+    homepage: String,
+    name: String,
+    authors: String,
+    librdkafka: String,
+    version: String,
+}
+
+#[derive(Deserialize, Debug)]
+struct Stats {
+    command: Stat,
+    all: Stat,
+    integration: Stat,
+    unit: Stat,
+    bench: Stat,
+}
+
+#[derive(Deserialize, Debug)]
+struct Stat {
+    pass: u16,
+    fail: u16,
+    skip: u16,
+    assert: u16,
+}
+
+// TODO Add test
+pub fn deserialize(report: &str) -> Result<WholeReport> {
+    let report: WholeReport = serde_json::from_str(report)?;
+
+    Ok(report)
+}
 
 // Run the benchmarks and store them in a report.json
 // TODO Write tests for this
