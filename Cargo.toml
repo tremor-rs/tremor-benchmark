@@ -13,6 +13,7 @@ categories = ["Benchmarking"]
 color-eyre = "0.5.10"
 serde = { version = "1.0.125", features = ["derive"] }
 serde_json = "1.0.64"
+chrono = "0.4.19"
 
 [dev-dependencies]
 pretty_assertions = "0.7.1"
