@@ -7,6 +7,15 @@ use std::fs;
 use std::path::Path;
 use std::process::Command;
 
+fn update_json(old: &str, to_be_added: &str) -> String {
+    // old is of the format [{},{},{}]
+    // new is of the format {}
+    // output should be [{},{}.{},{}]
+    let last_character_removed = old.trim().strip_suffix(']').unwrap();
+    let final_json = format!("{},{}]", last_character_removed, to_be_added);
+    final_json
+}
+
 // TODO The name is horrible here. pls help
 #[derive(Deserialize, Debug)]
 pub struct WholeReport {
@@ -407,5 +416,14 @@ Throughput: 515.7 MB/s
         let throughput = Some(515.7);
 
         assert_eq!(extract_throughput(some_log), throughput);
+    }
+
+    #[test]
+    fn test_update_json() {
+        let old_json = r#"[{"a":1},{"a":2}]"#;
+        let to_be_added_json = r#"{"a":3}"#;
+        let final_json = r#"[{"a":1},{"a":2},{"a":3}]"#;
+
+        assert_eq!(update_json(old_json, to_be_added_json), final_json);
     }
 }
