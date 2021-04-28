@@ -1,6 +1,5 @@
 import Head from "next/head";
 import styles from "../styles/Home.module.css";
-
 import BenchmarkChart from "../components/Benchmark.js";
 
 // FIXME
@@ -37,14 +36,13 @@ Object.keys(mapT).forEach(function (key) {
 console.log(mapCombined);
 
 export default function Home() {
-  const charList = (
-    Object.values(mapCombined).map((bench) =>
-      <BenchmarkChart
-        throughputs={bench.throughputs}
-        commitList={bench.commits}
-      />
-    )
-  );
+  const charList = Object.keys(mapCombined).map((benchKey) => (
+    <BenchmarkChart
+      throughputs={mapCombined[benchKey].throughputs}
+      commitList={mapCombined[benchKey].commits}
+      title={benchKey}
+    />
+  ));
   return (
     <div className={styles.container}>
       <Head>

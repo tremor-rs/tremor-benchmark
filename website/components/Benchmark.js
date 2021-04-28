@@ -10,6 +10,7 @@ class BenchmarkChart extends Component {
     super(props);
 
     this.state = {
+      title: props.title,
       options: {
         chart: {
           id: "basic-bar",
@@ -29,9 +30,9 @@ class BenchmarkChart extends Component {
 
   render() {
     return (
-      <div className="app">
-        <div className="row">
-          <div className="mixed-chart">
+      <div>
+        <h5>{this.state.title}</h5>
+        <div>
             <Chart
               options={this.state.options}
               series={this.state.series}
