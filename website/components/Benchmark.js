@@ -21,14 +21,26 @@ class BenchmarkChart extends Component {
               ),
           },
         },
+        yaxis: {
+          title: {
+            text: "MB/s",
+          },
         },
         xaxis: {
           categories: this.shortCommitHash,
+          tooltip: {
+            enabled: false,
+          },
+        },
+        legend: {
+          show: true,
+          showForSingleSeries: true,
+          position: "bottom",
         },
       },
       series: [
         {
-          name: "series-1",
+          name: props.title,
           data: props.throughputs,
         },
       ],
@@ -40,13 +52,11 @@ class BenchmarkChart extends Component {
       <div>
         <h5>{this.state.title}</h5>
         <div>
-            <Chart
-              options={this.state.options}
-              series={this.state.series}
-              type="line"
-              width="500"
-            />
-          </div>
+          <Chart
+            options={this.state.options}
+            series={this.state.series}
+            type="line"
+          />
         </div>
       </div>
     );
