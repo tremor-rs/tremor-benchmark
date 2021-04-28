@@ -14,6 +14,13 @@ class BenchmarkChart extends Component {
       options: {
         chart: {
           id: "basic-bar",
+          events: {
+            markerClick: (c1, c2, { dataPointIndex }) =>
+              window.open(
+                `https://github.com/tremor-rs/tremor-runtime/commit/${props.commitList[dataPointIndex]}`
+              ),
+          },
+        },
         },
         xaxis: {
           categories: this.shortCommitHash,
