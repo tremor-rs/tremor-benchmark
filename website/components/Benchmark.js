@@ -8,7 +8,7 @@ const Chart = dynamic(() => import("react-apexcharts"), {
 class BenchmarkChart extends Component {
   constructor(props) {
     super(props);
-
+    this.shortCommitHash = props.commitList.map((c) => c.slice(0, 6));
     this.state = {
       title: props.title,
       options: {
@@ -16,7 +16,7 @@ class BenchmarkChart extends Component {
           id: "basic-bar",
         },
         xaxis: {
-          categories: props.commitList,
+          categories: this.shortCommitHash,
         },
       },
       series: [
