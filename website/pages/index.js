@@ -46,8 +46,14 @@ export default function Home() {
     )
   );
   return (
-    <div>
-      {charList}
+    <div className={styles.container}>
+      <Head>
+        <title>Tremor Benchmarks</title>
+      </Head>
+      <main className={styles.main}>
+        <h1 className={styles.title}>Tremor Benchmarks</h1>
+        <div>{charList}</div>
+      </main>
     </div>
   );
 }
