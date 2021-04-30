@@ -11,7 +11,7 @@
       Contributing
     </a>
     <span> | </span>
-    <a href="https://bit.ly/tremor-discord">
+    <a href="https://discord.gg/Wjqu5H9rhQ">
       Chat
     </a>
   </h3>
@@ -26,12 +26,14 @@ A good Continuous Benchmarking System in our opinion requires three things:
 - _Someplace_ to store the benchmark data
 - _Something_ to view the stored benchmark data
 
-The [tremor-cli]() is used to run the benchmarks and a `report.json` is
-generated which is then converted to a JSON file which can be stored and is easy
-to parse for historical report generation. There are two files stored as JSON in
-the data/ folder `data.json` and `recent.json`. `data.json` contains the data of
-all the benchmarks from the start and `recent.json` contains the data of the
-last benchmark run. The website/ folder contains the code of the website which
+The
+[tremor-cli](https://github.com/tremor-rs/tremor-runtime/tree/main/tremor-cli)
+is used to run the benchmarks and a `report.json` is generated which is then
+converted to a JSON file which can be stored and is easy to parse for historical
+report generation. There are two files stored as JSON in the data/ folder
+`data.json` and `recent.json`. `data.json` contains the data of all the
+benchmarks from the start and `recent.json` contains the data of the last
+benchmark run. The website/ folder contains the code of the website which
 renders the charts for the benchmarks
 
 ## Contributing
@@ -53,10 +55,11 @@ This describes the minimum behavior expected from all contributors.
 
 Licensed under
 
-- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE)
+- Apache License, Version 2.0 ([LICENSE](LICENSE)
   https://www.apache.org/licenses/LICENSE-2.0)
 
 <!-- not sure what this syntax is -->
+
 [contributing]: https://github.com/humancalico/tremor-benchmark/blob/main/.github/CONTRIBUTING.md
 [good-first-issue]: https://github.com/humancalico/tremor-benchmark/labels/good%20first%20issue
 [help-wanted]: https://github.com/humancalico/tremor-benchmark/labels/help%20wanted
