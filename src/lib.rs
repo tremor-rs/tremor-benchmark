@@ -175,11 +175,9 @@ fn extract_throughput(log_string: &str) -> Option<f64> {
     let start = log_string.find("Throughput:").unwrap() + 12;
     let end = log_string.find("MB/s").unwrap();
 
-    if let Some(throughput_string) = log_string.get(start..end) {
-        Some(throughput_string.trim().parse().unwrap())
-    } else {
-        None
-    }
+    log_string
+        .get(start..end)
+        .map(|throughput_string| throughput_string.trim().parse().unwrap())
 }
 
 #[cfg(test)]
