@@ -8,7 +8,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: macos-latest
+            kind: test
+          - os: windows-latest
+            kind: test
+          - os: ubuntu-latest
+            kind: test
+          - os: ubuntu-latest
+            kind: lint
 
     env:
       RUST_BACKTRACE: full
@@ -32,11 +40,13 @@ jobs:
           command: check
 
       - name: check clippy
+        if: matrix.kind == 'lint'
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: check rustfmt
+        if: matrix.kind == 'lint'
         uses: actions-rs/cargo@v1
         with:
           command: fmt
