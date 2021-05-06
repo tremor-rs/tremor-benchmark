@@ -25,7 +25,13 @@ jobs:
           toolchain: stable
           profile: minimal
           components: rustfmt, clippy
+
       - name: cargo check
         uses: actions-rs/cargo@v1
         with:
           command: check
+
+      - name: check clippy
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
