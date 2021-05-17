@@ -2,12 +2,10 @@
 name = "tremor-benchmark"
 description = "Continuous benchmarking infrastructure for Tremor"
 version = "0.1.0"
-authors = ["Akshat Agarwal <humancalico@disroot.org>"]
+authors = ["The Tremor Team"]
 edition = "2018"
 license = "Apache-2.0"
 repository = "https://github.com/humancalico/tremor-benchmark"
-keywords = ["tremor", "benchmark"]
-categories = ["Benchmarking"]
 
 [dependencies]
 color-eyre = "0.5.10"
