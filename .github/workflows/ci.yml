@@ -9,14 +9,15 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: macos-latest
-            kind: test
-          - os: windows-latest
-            kind: test
           - os: ubuntu-latest
             kind: test
+            profile: debug
           - os: ubuntu-latest
             kind: lint
+            profile: debug
+          - os: ubuntu-latest
+            kind: test
+            profile: release
 
     env:
       RUST_BACKTRACE: full
@@ -31,6 +32,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+          target: x86_64-unknown-linux-musl
           profile: minimal
           components: rustfmt, clippy
 
@@ -52,7 +54,54 @@ jobs:
           command: fmt
           args: -- --check
 
+      - name: build debug
+        if: matrix.kind == 'test' && matrix.profile == 'debug'
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+
       - name: test debug
-        if: matrix.kind == 'test'
+        if: matrix.kind == 'test' && matrix.profile == 'debug'
         run: |
-          cargo test --locked --all-targets
+          cargo test --locked
+
+      - name: build release
+        if: matrix.kind == 'test' && matrix.profile == 'release'
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release
+
+      - name: create source tarballs (release, linux)
+        if: |
+          matrix.os == 'ubuntu' &&
+          matrix.profile == 'release' &&
+          matrix.kind == 'test' &&
+          github.repository == 'humancalico/tremor-benchmark' &&
+          startsWith(github.ref, 'refs/tags/')
+        run: |
+          mkdir -p target/release
+          tar --exclude=.cargo_home --exclude=".git*" --exclude=target -czvf target/release/tremor-benchmark_src.tar.gz -C .. tremor-benchmark
+
+      - name: prepare release (linux-musl)
+        if: |
+          startsWith(matrix.os, 'ubuntu') &&
+          matrix.kind == 'test' &&
+          matrix.profile == 'release'
+        run: |
+          cd target/release
+          zip -r tremor-benchmark-x86_64-unknown-linux-musl.zip tremor-benchmark
+
+      - name: upload release to GitHub
+        uses: softprops/action-gh-release@v1
+        if: |
+          matrix.kind == 'test' &&
+          matrix.profile == 'release' &&
+          github.repository == 'humancalico/tremor-benchmark' &&
+          startsWith(github.ref, 'refs/tags/')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: |
+            target/release/tremor-benchmark-x86_64-unknown-linux-musl.zip
+          draft: true
