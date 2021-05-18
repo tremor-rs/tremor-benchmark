@@ -95,20 +95,6 @@ pub fn deserialize(report: &str) -> Result<WholeReport> {
     Ok(report)
 }
 
-// Here path is the path of the git directory
-fn find_commit_hash<S>(dir: S) -> Result<String>
-where
-    S: AsRef<Path>,
-{
-    let output = Command::new("git")
-        .args(&["rev-parse", "HEAD"])
-        .current_dir(dir)
-        .output()?
-        .stdout;
-    let output = std::str::from_utf8(&output)?.trim();
-    Ok(output.into())
-}
-
 fn date_and_time() -> String {
     Utc::now().to_string()
 }
@@ -126,7 +112,7 @@ struct Benchmark {
     throughput: f64,
 }
 
-pub fn convert_into_relevant_data(whole_report: WholeReport) -> Result<Data> {
+pub fn convert_into_relevant_data(whole_report: WholeReport, commit_hash: &str) -> Result<Data> {
     let mut benchmarks: Vec<Benchmark> = vec![];
     for report in whole_report.reports.bench {
         // TODO add a check if benchmark has passed or failed
@@ -134,11 +120,10 @@ pub fn convert_into_relevant_data(whole_report: WholeReport) -> Result<Data> {
         let throughput = extract_throughput(&report.elements.bench.evidence.stdout).unwrap();
         benchmarks.push(Benchmark { name, throughput });
     }
-    let commit_hash = find_commit_hash("/home/humancalico/tremor-runtime")?;
     let created_at = date_and_time();
     Ok(Data {
         created_at,
-        commit_hash,
+        commit_hash: commit_hash.into(),
         benchmarks,
     })
 }
