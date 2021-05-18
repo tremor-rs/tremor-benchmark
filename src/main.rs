@@ -22,10 +22,6 @@ fn main() -> Result<()> {
 
     let opts: Opts = Opts::parse();
 
-    println!("The data file is {}", opts.data_file.display());
-    println!("The recent file is {}", opts.recent_file.display());
-    println!("The report file is {}", opts.report_file.display());
-
     fs::write(
         &opts.recent_file,
         serialize(&convert_into_relevant_data(deserialize(
