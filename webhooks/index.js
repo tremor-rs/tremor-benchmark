@@ -22,4 +22,5 @@ app.post("/payload", function (req, res) {
   }
 });
 
-app.listen(3000);
+// TODO this should not be hardcoded
+app.listen(9247, '0.0.0.0');
