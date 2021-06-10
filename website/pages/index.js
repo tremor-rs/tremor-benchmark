@@ -3,7 +3,7 @@ import styles from "../styles/Home.module.css";
 import BenchmarkChart from "../components/Benchmark.js";
 
 // FIXME
-import datas from "../data.json";
+import datas from "../../data/data.json";
 
 let mapT = new Map();
 let mapC = new Map();
