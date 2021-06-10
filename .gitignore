@@ -107,3 +107,6 @@ dist
 # Added by cargo
 
 /target
+
+docker/docker-compose.yml
+docker/report.json
