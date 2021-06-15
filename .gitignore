@@ -108,5 +108,4 @@ dist
 
 /target
 
-docker/docker-compose.yml
 docker/report.json
