@@ -6,7 +6,7 @@ export default function Home() {
   const [datas, setDatas] = useState([]);
   useEffect(() => {
     fetch(
-      "https://github.com/tremor-rs/tremor-benchmark/raw/main/data/data.json"
+      "https://raw.githubusercontent.com/tremor-rs/tremor-benchmark/data/data.json"
     )
       .then((response) => {
         return response.json();
