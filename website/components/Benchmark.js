@@ -27,6 +27,9 @@ class BenchmarkChart extends Component {
           },
         },
         xaxis: {
+          labels: {
+            show: false,
+          },
           categories: this.shortCommitHash,
           tooltip: {
             enabled: false,
@@ -49,15 +52,12 @@ class BenchmarkChart extends Component {
 
   render() {
     return (
-      <div>
-        <h5>{this.state.title}</h5>
-        <div>
-          <Chart
-            options={this.state.options}
-            series={this.state.series}
-            type="line"
-          />
-        </div>
+      <div className="pb-4 pt-4">
+        <Chart
+          options={this.state.options}
+          series={this.state.series}
+          type="line"
+        />
       </div>
     );
   }
