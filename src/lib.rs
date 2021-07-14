@@ -114,6 +114,7 @@ pub struct Data {
 struct Benchmark {
     name: String,
     throughput: f64,
+    events: f64,
 }
 
 pub fn convert_into_relevant_data(whole_report: WholeReport, commit_hash: &str) -> Result<Data> {
@@ -122,7 +123,12 @@ pub fn convert_into_relevant_data(whole_report: WholeReport, commit_hash: &str) 
         // TODO add a check if benchmark has passed or failed
         let name = report.elements.bench.name;
         let throughput = extract_throughput(&report.elements.bench.evidence.stdout).unwrap();
-        benchmarks.push(Benchmark { name, throughput });
+        let events = extract_events(&report.elements.bench.evidence.stdout).unwrap();
+        benchmarks.push(Benchmark {
+            name,
+            throughput,
+            events,
+        });
     }
     let created_at = date_and_time();
     Ok(Data {
@@ -161,8 +167,17 @@ where
 }
 
 fn extract_throughput(log_string: &str) -> Option<f64> {
-    let start = log_string.find("Throughput:").unwrap() + 12;
+    let start = log_string.find("Throughput   (data):").unwrap() + 21;
     let end = log_string.find("MB/s").unwrap();
+
+    log_string
+        .get(start..end)
+        .map(|throughput_string| throughput_string.trim().parse().unwrap())
+}
+
+fn extract_events(log_string: &str) -> Option<f64> {
+    let start = log_string.find("Throughput (events):").unwrap() + 21;
+    let end = log_string.find("k events/s").unwrap();
 
     log_string
         .get(start..end)
@@ -238,12 +253,14 @@ mod tests {
 #[Buckets    =           30, SubBuckets     =         3968]
 
 
-Throughput: 515.7 MB/s
+Throughput   (data): 58.7 MB/s
+Throughput (events): 921.6k events/s
             "#;
 
-        let throughput = Some(515.7);
-
+        let throughput = Some(58.7);
+        let events = Some(921.6);
         assert_eq!(extract_throughput(some_log), throughput);
+        assert_eq!(extract_events(some_log), events);
     }
 
     #[test]
