@@ -39,8 +39,6 @@ app.post("/payload", verify, function (req, res) {
     res.status(200).send(`Received a request for the commit ${commit_hash} and request body was signed`);
     // start the benchmark pipeline
     const child = spawnSync("./target/release/tremor-benchmark", [
-      "./data/data.json",
-      "./data/recent.json",
       commit_hash,
     ], { encoding: 'utf8' });
 
