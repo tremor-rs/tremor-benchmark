@@ -121,7 +121,7 @@ CMD [ "tremor", "test", "bench", "/bench", "-o" ]
     fs::write(
         "docker-compose.yml",
         format!(
-            r#"version: '3.8'
+            r#"version: '3.3'
 
 services:
   benchmark:
