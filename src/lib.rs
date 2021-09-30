@@ -2,10 +2,6 @@ use chrono::offset::Utc;
 use color_eyre::eyre::Result;
 use serde::{Deserialize, Serialize};
 
-use std::fs;
-use std::path::Path;
-use std::process::Command;
-
 pub fn update_json(old: &str, to_be_added: &str) -> String {
     // old is of the format [{},{},{}]
     // to_be_added is of the format {}
@@ -93,10 +89,8 @@ struct Stat {
 }
 
 // TODO Add test
-pub fn deserialize(report: &str) -> Result<WholeReport> {
-    let report: WholeReport = serde_json::from_str(report)?;
-
-    Ok(report)
+pub fn deserialize(report: &[u8]) -> Result<WholeReport> {
+    Ok(serde_json::from_slice(report)?)
 }
 
 fn date_and_time() -> String {
@@ -140,30 +134,6 @@ pub fn convert_into_relevant_data(whole_report: WholeReport, commit_hash: &str) 
 
 pub fn serialize(data: &Data) -> Result<String> {
     Ok(serde_json::to_string(data)?)
-}
-
-// Currently there is no good way to run benchmarks knowing only their name so tags are used.
-// This should be a feature in the upstream CLI
-// This function compares the tags and runs the benchmark only if all the necessary tags are
-// present
-pub fn run_benchmark_with_tags<S>(project_root: S, tags: &[&str]) -> Result<String>
-where
-    S: AsRef<Path>,
-{
-    let arguments = [
-        &["test", "bench", "tremor-cli/tests/bench", "-o", "-i"],
-        tags,
-    ]
-    .concat();
-
-    // ./target/release/tremor test bench tremor-cli/tests/bench/
-    // The -o flag stores the benchmarks in a report.json
-    Command::new("./target/release/tremor")
-        .args(arguments)
-        .current_dir(project_root)
-        .output()?;
-
-    Ok(fs::read_to_string("report.json")?)
 }
 
 fn extract_throughput(log_string: &str) -> Option<f64> {
