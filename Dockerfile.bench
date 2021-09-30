@@ -1,0 +1,46 @@
+FROM rust:1.55
+
+RUN useradd -ms /bin/bash tremor
+
+# install dependencies
+RUN apt-get update \
+    && apt-get install -y libssl1.1 libcurl4 libatomic1 tini curl libclang-dev cmake
+
+ARG commithash=__COMMITHASH__
+# ARG commithash=e93b80517c85bfb3707a54a0c65accc9e9b6f1f1
+
+ENV RUSTFLAGS="-C target-feature=+avx,+avx2,+sse4.2"
+
+# TODO ensure wget is present
+# TODO figure out a way to get commit hash here
+# We planned to disable networking inside the docker containerat first but now we are doing this so that
+# can't be done anymore
+# TODO figure out a way by which we can allow networking in docker for certain sites only
+RUN wget https://github.com/tremor-rs/tremor-runtime/archive/$commithash.tar.gz
+
+RUN tar -xf $commithash.tar.gz
+
+RUN rm $commithash.tar.gz
+
+WORKDIR tremor-runtime-$commithash/
+
+RUN cargo build -p tremor-cli --release
+
+# Copy the binary to /usr/local/bin
+RUN cp target/release/tremor /usr/local/bin/
+
+# stdlib
+RUN mkdir -p /usr/share/tremor/lib
+RUN cp -r tremor-script/lib /usr/share/tremor/lib
+
+COPY run.sh .
+
+# setting TREMOR_PATH
+# /usr/local/share/tremor - for host-specific local tremor-script modules and libraries, takes precedence
+# /usr/share/tremor/lib - place for the tremor-script stdlib
+ENV TREMOR_PATH="/usr/local/share/tremor:/usr/share/tremor/lib"
+
+RUN cd ..
+
+# CMD [ "tremor", "test", "bench", "tremor-cli/tests/bench", "-o", "${commithash}.json", "-i", "2i" ]
+CMD ["bash", "run.sh", "${commithash}"]
