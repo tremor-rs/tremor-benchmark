@@ -1,1 +1,0 @@
-{"created_at":"2021-09-30 13:38:41.348797708 UTC","commit_hash":"e93b80517c85bfb3707a54a0c65accc9e9b6f1f1","benchmarks":[{"name":"bench_pipe_passthrough_two_inputs","throughput":236.7,"events":394.4}]}
