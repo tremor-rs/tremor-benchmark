@@ -23,7 +23,7 @@ mod util;
 use crate::error::Error;
 use crate::schema::benchmarks;
 use crate::schema::benchmarks::dsl::*;
-use crate::util::{convert_into_relevant_data, deserialize};
+use crate::util::convert_into_relevant_data;
 use async_std::channel::{bounded, Sender};
 use async_std::task;
 use clap::{crate_authors, crate_version, Clap};
@@ -38,7 +38,7 @@ use async_std::sync::Arc;
 use std::env;
 
 use hyper::service::{make_service_fn, service_fn};
-use hyper::{Body, Method, Request, Response, Server, StatusCode};
+use hyper::{header, Body, Method, Request, Response, Server, StatusCode};
 
 use hmac::{Hmac, Mac, NewMac};
 use sha2::Sha256;
@@ -79,7 +79,7 @@ async fn get_report(hash: &str) -> Result<Vec<Benchmark>> {
         .args(&["image", "rm", &tag])
         .output()
         .await?;
-    convert_into_relevant_data(deserialize(&r.stdout)?, hash)
+    convert_into_relevant_data(serde_json::from_slice(&r.stdout)?, hash)
 }
 
 /// This is our service handler. It receives a Request, routes on its
@@ -95,7 +95,12 @@ async fn run(
             let connection = establish_connection();
             let res: Vec<Benchmark> = benchmarks.limit(100).load(&connection)?;
             let res = serde_json::to_string(&res)?;
-            Ok(Response::new(Body::from(res)))
+            Response::builder()
+                .status(StatusCode::OK)
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
+                .body(Body::from(res))
+                .map_err(|_| Error::Other)
         }
         // Simply echo the body back to the client.
         (&Method::POST, "/bench") => {
@@ -105,12 +110,30 @@ async fn run(
                 .get("X-Hub-Signature-256")
                 .and_then(|v| v.to_str().ok())
                 .map(ToString::to_string);
+
+            let event = req
+                .headers()
+                .get("X-GitHub-Event")
+                .and_then(|v| v.to_str().ok())
+                .map(ToString::to_string)
+                .ok_or_else(|| Error::BadRequest("missing X-GitHub-Event header".into()))?;
+
+            if event != "push" {
+                return Err(Error::BadRequest(format!(
+                    "Only runs on `push` but got {}",
+                    event
+                )));
+            };
+
             let body = hyper::body::to_bytes(req.into_body()).await?;
 
             if let Some(key) = &opts.key {
                 let mut mac = HmacSha256::new_from_slice(key.as_bytes())?;
                 mac.update(&body);
-                let result = base16::encode_lower(&mac.finalize().into_bytes());
+                let result = format!(
+                    "sha256={}",
+                    base16::encode_lower(&mac.finalize().into_bytes())
+                );
                 if sig != Some(result) {
                     //FIXME: Error
                     let mut error = Response::new(Body::from("bad hmac"));
@@ -121,9 +144,18 @@ async fn run(
 
             let body = serde_json::from_slice::<Value>(&body)?;
 
-            if Some("push") != body.get("action").and_then(Value::as_str) {
-                return Err(Error::BadRequest("action missing or not `push`".into()));
-            };
+            let ghref = body
+                .get("ref")
+                .and_then(Value::as_str)
+                .ok_or_else(|| Error::BadRequest("`ref` is missing".into()))?
+                .to_string();
+
+            if ghref != "main" {
+                return Ok(Response::new(Body::from(format!(
+                    r#"{{"branch": "{}"}}"#,
+                    ghref
+                ))));
+            }
 
             let hash = body
                 .get("after")
@@ -141,8 +173,9 @@ async fn run(
 
         // Return the 404 Not Found for other routes.
         _ => {
-            let static_ = hyper_staticfile::Static::new("ui/");
-            Ok(static_.serve(req).await?)
+            let mut error = Response::new(Body::from("not found"));
+            *error.status_mut() = StatusCode::NOT_FOUND;
+            Ok(error)
         }
     }
 }
@@ -178,7 +211,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     });
     let opts: Opts = Opts::parse();
 
-    let addr = ([127, 0, 0, 1], 3000).into();
+    let addr = ([127, 0, 0, 1], 3001).into();
 
     let service = make_service_fn(move |_| {
         let o = Arc::new(opts.clone());

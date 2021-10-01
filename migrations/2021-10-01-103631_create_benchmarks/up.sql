@@ -4,7 +4,7 @@ CREATE TABLE benchmarks (
     created_at DATE NOT NULL,
     commit_hash CHAR(40)  NOT NULL,
     bench_name VARCHAR  NOT NULL,
-    mpbs FLOAT8 NOT NULL,
+    mbps FLOAT8 NOT NULL,
     eps FLOAT8 NOT NULL,
     hist TEXT NOT NULL
 );

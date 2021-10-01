@@ -19,7 +19,6 @@ dotenv = "0.15.0"
 futures-util = "0.3"
 hmac = "0.11"
 hyper = { version = "0.14", features = ["full"] }
-hyper-staticfile = "*"
 octocrab = "0.12"
 pretty_env_logger = "0.4"
 serde = { version = "1.0.125", features = ["derive"] }

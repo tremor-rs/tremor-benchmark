@@ -4,7 +4,7 @@ table! {
         created_at -> Date,
         commit_hash -> Text,
         bench_name -> Text,
-        mpbs -> Float,
+        mbps -> Float,
         eps -> Float,
         hist -> Text,
     }

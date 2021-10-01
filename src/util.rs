@@ -24,24 +24,14 @@ pub struct WholeReport {
     metadata: Metadata,
     includes: Vec<String>,
     excludes: Vec<String>,
-    reports: Reports,
+    reports: Vec<SingleReport>,
     stats: Stats,
-}
-
-#[derive(Deserialize, Debug)]
-struct Reports {
-    bench: Vec<SingleReport>,
 }
 
 #[derive(Deserialize, Debug)]
 struct SingleReport {
     description: String,
-    elements: Element,
-}
-
-#[derive(Deserialize, Debug)]
-struct Element {
-    bench: Bench,
+    elements: Bench,
 }
 
 #[derive(Deserialize, Debug)]
@@ -91,30 +81,20 @@ struct Stat {
     assert: u16,
 }
 
-// TODO Add test
-pub fn deserialize(report: &[u8]) -> Result<WholeReport> {
-    Ok(serde_json::from_slice(report)?)
-}
-
-fn date_and_time() -> String {
-    Utc::now().to_string()
-}
-
 pub fn convert_into_relevant_data(
     whole_report: WholeReport,
     commit_hash: &str,
 ) -> Result<Vec<crate::model::Benchmark>> {
-    let created_at = date_and_time();
+    let created_at = Utc::now().to_string();
 
     whole_report
         .reports
-        .bench
         .into_iter()
         .map(|report| {
             // TODO add a check if benchmark has passed or failed
-            let bench_name = report.elements.bench.name;
-            let r = report.elements.bench.evidence.stdout;
-            let mpbs = extract_throughput(&r).ok_or(Error::Other)?;
+            let bench_name = report.elements.name;
+            let r = report.elements.evidence.stdout;
+            let mbps = extract_throughput(&r).ok_or(Error::Other)?;
             let eps = extract_events(&r).ok_or(Error::Other)?;
             let hist = extract_hist(&r).ok_or(Error::Other)?.to_string();
             Ok(crate::model::Benchmark {
@@ -122,7 +102,7 @@ pub fn convert_into_relevant_data(
                 created_at: created_at.clone(),
                 commit_hash: commit_hash.to_string(),
                 bench_name,
-                mpbs,
+                mbps,
                 eps,
                 hist,
             })

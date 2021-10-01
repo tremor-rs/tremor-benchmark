@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 // Copyright 2020-2021, The Tremor Team
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +11,9 @@ use std::fmt::Display;
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 use hmac::crypto_mac::InvalidKeyLength;
+use std::fmt::Display;
 
 impl From<hyper::Error> for Error {
     fn from(e: hyper::Error) -> Self {
