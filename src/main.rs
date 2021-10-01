@@ -1,15 +1,41 @@
-use async_std::channel::{Sender, bounded};
+// Copyright 2020-2021, The Tremor Team
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#[macro_use]
+extern crate diesel;
+
+mod error;
+mod model;
+pub(crate) mod schema;
+mod util;
+
+use crate::error::Error;
+use crate::schema::benchmarks;
+use crate::schema::benchmarks::dsl::*;
+use crate::util::{convert_into_relevant_data, deserialize};
+use async_std::channel::{bounded, Sender};
 use async_std::task;
 use clap::{crate_authors, crate_version, Clap};
 use color_eyre::eyre::Result;
+use diesel::prelude::*;
+use diesel::{Connection, SqliteConnection};
+use model::Benchmark;
 use serde_json::Value;
-use tremor_benchmark::{convert_into_relevant_data, Data};
 
 use async_std::process::Command;
 use async_std::sync::Arc;
 use std::env;
-
-use tremor_benchmark::deserialize;
 
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
@@ -26,9 +52,9 @@ struct Opts {
     key: Option<String>,
 }
 
-async fn get_report(commit_hash: &str) -> Result<Data> {
+async fn get_report(hash: &str) -> Result<Vec<Benchmark>> {
     // calculate short commit hash
-    let short_commit_hash = &commit_hash[..6];
+    let short_commit_hash = &hash[..6];
 
     let tag = format!("tremor-benchmark:{}", short_commit_hash);
 
@@ -41,7 +67,7 @@ async fn get_report(commit_hash: &str) -> Result<Data> {
             "-f",
             "Dockerfile.bench",
             "--build-arg",
-            &format!("commithash={}", commit_hash),
+            &format!("commithash={}", hash),
             "docker",
         ])
         .output()
@@ -53,89 +79,100 @@ async fn get_report(commit_hash: &str) -> Result<Data> {
         .args(&["image", "rm", &tag])
         .output()
         .await?;
-    convert_into_relevant_data(deserialize(&r.stdout)?, commit_hash)
+    convert_into_relevant_data(deserialize(&r.stdout)?, hash)
 }
-
-
 
 /// This is our service handler. It receives a Request, routes on its
 /// path, and returns a Future of a Response.
-async fn run(opts: Arc<Opts>, tx: Sender<String>, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+async fn run(
+    opts: Arc<Opts>,
+    tx: Sender<String>,
+    req: Request<Body>,
+) -> Result<Response<Body>, Error> {
     match (req.method(), req.uri().path()) {
-        // Serve some instructions at /
-        (&Method::GET, "/") => Ok(Response::new(Body::from(
-            "Try POSTing data to /echo such as: `curl localhost:3000/bench -XPOST -d '<commit hash>'`",
-        ))),
-
+        (&Method::GET, "/bench") => {
+            // FIXME: this is terrible
+            let connection = establish_connection();
+            let res: Vec<Benchmark> = benchmarks.limit(100).load(&connection)?;
+            let res = serde_json::to_string(&res)?;
+            Ok(Response::new(Body::from(res)))
+        }
         // Simply echo the body back to the client.
         (&Method::POST, "/bench") => {
             //
-            let sig = req.headers().get("X-Hub-Signature-256").and_then(|v| v.to_str().ok()).map(ToString::to_string);
+            let sig = req
+                .headers()
+                .get("X-Hub-Signature-256")
+                .and_then(|v| v.to_str().ok())
+                .map(ToString::to_string);
             let body = hyper::body::to_bytes(req.into_body()).await?;
 
             if let Some(key) = &opts.key {
-                let mut mac = HmacSha256::new_from_slice(key.as_bytes())    .expect("HMAC failed to create");
+                let mut mac = HmacSha256::new_from_slice(key.as_bytes())?;
                 mac.update(&body);
-                let result = base16::encode_lower( &mac.finalize().into_bytes());
-                if  sig != Some(result) {
+                let result = base16::encode_lower(&mac.finalize().into_bytes());
+                if sig != Some(result) {
                     //FIXME: Error
                     let mut error = Response::new(Body::from("bad hmac"));
                     *error.status_mut() = StatusCode::FORBIDDEN;
-                    return Ok(error)
+                    return Ok(error);
                 };
             };
 
-            let body = if let Ok(b) = serde_json::from_slice::<Value>(&body) {
-                b
-            } else {
-                let mut error = Response::new(Body::from("invalid payload"));
-                    *error.status_mut() = StatusCode::BAD_REQUEST;
-                    return Ok(error) 
+            let body = serde_json::from_slice::<Value>(&body)?;
+
+            if Some("push") != body.get("action").and_then(Value::as_str) {
+                return Err(Error::BadRequest("action missing or not `push`".into()));
             };
 
-            if Some("push") != 
-                body.get("action").and_then(Value::as_str) {
-                    //FIXME: Error
-                    //FIXME: Error
-                    let mut error = Response::new(Body::from("action missing or not `push`"));
-                    *error.status_mut() = StatusCode::BAD_REQUEST;
-                    return Ok(error)
-            };
+            let hash = body
+                .get("after")
+                .and_then(Value::as_str)
+                .ok_or_else(|| Error::BadRequest("`after` is missing".into()))?
+                .to_string();
 
-            let hash = if let Some(s) = body.get("after").and_then(Value::as_str) {
-                s.to_string()
-            } else {
-                //FIXME: Error
-                let mut error = Response::new(Body::from("after missing"));
-                *error.status_mut() = StatusCode::FORBIDDEN;
-                return Ok(error)
-            };
+            tx.send(hash.clone()).await?;
 
-
-            tx.send(hash.clone()).await.unwrap();
-
-            Ok(Response::new(Body::from(format!(r#"{{"hash": "{}"}}"#, hash))))
+            Ok(Response::new(Body::from(format!(
+                r#"{{"hash": "{}"}}"#,
+                hash
+            ))))
         }
 
         // Return the 404 Not Found for other routes.
         _ => {
-            let mut not_found = Response::default();
-            *not_found.status_mut() = StatusCode::NOT_FOUND;
-            Ok(not_found)
+            let static_ = hyper_staticfile::Static::new("ui/");
+            Ok(static_.serve(req).await?)
         }
     }
 }
 
+fn establish_connection() -> SqliteConnection {
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    SqliteConnection::establish(&database_url)
+        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    dotenv::dotenv().ok();
 
     let (tx, rx) = bounded::<String>(64);
 
     task::spawn(async move {
+        let connection = establish_connection();
         while let Ok(hash) = rx.recv().await {
-            match  get_report(&hash).await {
+            match get_report(&hash).await {
                 Err(e) => eprint!("Report Error {}", e),
-                Ok(r) => println!("data: {:?}", r)
+                Ok(r) => {
+                    println!("data: {:?}", r);
+                    for b in r {
+                        diesel::insert_into(benchmarks::table)
+                            .values(&b.as_new())
+                            .execute(&connection)
+                            .expect("Error saving new post");
+                    }
+                }
             };
         }
     });
@@ -146,7 +183,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let service = make_service_fn(move |_| {
         let o = Arc::new(opts.clone());
         let tx = tx.clone();
-        async move { Ok::<_, hyper::Error>(service_fn(move |req| run(o.clone(), tx.clone(), req))) }
+        async move {
+            Ok::<_, hyper::Error>(service_fn(move |req| {
+                let o = o.clone();
+                let tx = tx.clone();
+
+                async move {
+                    match run(o, tx, req).await {
+                        Ok(r) => Ok(r),
+                        Err(Error::BadRequest(e)) => {
+                            let mut error = Response::new(Body::from(e));
+                            *error.status_mut() = StatusCode::BAD_REQUEST;
+                            Ok(error)
+                        }
+                        Err(Error::Hyper(e)) => Err(e),
+                        Err(e) => {
+                            let mut error = Response::new(Body::from(format!("Error: {:?}", e)));
+                            *error.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
+                            Ok(error)
+                        }
+                    }
+                }
+            }))
+        }
     });
 
     let server = Server::bind(&addr).serve(service);
