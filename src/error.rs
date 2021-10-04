@@ -27,7 +27,7 @@ impl From<&str> for Error {
 }
 impl From<InvalidKeyLength> for Error {
     fn from(_: InvalidKeyLength) -> Self {
-        Self::Other
+        Self::Other("invalid lenght")
     }
 }
 
@@ -38,23 +38,23 @@ impl From<serde_json::Error> for Error {
 }
 impl From<std::io::Error> for Error {
     fn from(_: std::io::Error) -> Self {
-        Self::Other
+        Self::Other("IO Error")
     }
 }
 impl<T> From<async_std::channel::SendError<T>> for Error {
     fn from(_: async_std::channel::SendError<T>) -> Self {
-        Self::Other
+        Self::Other("send error")
     }
 }
 impl From<diesel::result::Error> for Error {
     fn from(_: diesel::result::Error) -> Self {
-        Self::Other
+        Self::Other("diesel error")
     }
 }
 
 #[derive(Debug)]
 pub enum Error {
-    Other,
+    Other(&'static str),
     Text(String),
     Hyper(hyper::Error),
     BadRequest(String),

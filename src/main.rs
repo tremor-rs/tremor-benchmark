@@ -100,7 +100,7 @@ async fn run(
                 .header(header::CONTENT_TYPE, "application/json")
                 .header(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
                 .body(Body::from(res))
-                .map_err(|_| Error::Other)
+                .map_err(|_| Error::Other("response error"))
         }
         // Simply echo the body back to the client.
         (&Method::POST, "/bench") => {
@@ -150,7 +150,7 @@ async fn run(
                 .ok_or_else(|| Error::BadRequest("`ref` is missing".into()))?
                 .to_string();
 
-            if ghref != "main" {
+            if ghref != "refs/heads/main" {
                 return Ok(Response::new(Body::from(format!(
                     r#"{{"branch": "{}"}}"#,
                     ghref
@@ -211,7 +211,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     });
     let opts: Opts = Opts::parse();
 
-    let addr = ([127, 0, 0, 1], 3001).into();
+    let addr = ([0, 0, 0, 0], 8080).into();
 
     let service = make_service_fn(move |_| {
         let o = Arc::new(opts.clone());
