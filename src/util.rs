@@ -24,14 +24,24 @@ pub struct WholeReport {
     metadata: Metadata,
     includes: Vec<String>,
     excludes: Vec<String>,
-    reports: Vec<SingleReport>,
+    reports: Reports,
     stats: Stats,
+}
+
+#[derive(Deserialize, Debug)]
+struct Reports {
+    bench: Vec<SingleReport>
 }
 
 #[derive(Deserialize, Debug)]
 struct SingleReport {
     description: String,
-    elements: Bench,
+    elements: Element,
+}
+
+#[derive(Deserialize, Debug)]
+struct Element {
+    bench: Bench
 }
 
 #[derive(Deserialize, Debug)]
@@ -89,14 +99,25 @@ pub fn convert_into_relevant_data(
 
     whole_report
         .reports
+        .bench
         .into_iter()
         .map(|report| {
             // TODO add a check if benchmark has passed or failed
-            let bench_name = report.elements.name;
-            let r = report.elements.evidence.stdout;
-            let mbps = extract_throughput(&r).ok_or(Error::Other)?;
-            let eps = extract_events(&r).ok_or(Error::Other)?;
-            let hist = extract_hist(&r).ok_or(Error::Other)?.to_string();
+            let r = &report.elements.bench.evidence.stdout;
+            let mbps = extract_throughput(r).ok_or(Error::Other("failed to get mbps"));
+            let eps = extract_events(r).ok_or(Error::Other("failed to get eps"));
+            let hist = extract_hist(r).ok_or(Error::Other("faild to get histogram"));
+            drop(r);
+
+            if mbps.is_err() || eps.is_err() || hist.is_err() {
+                dbg!(&report);
+            }
+
+            let mbps = mbps.unwrap_or_default();
+            let eps = eps.unwrap_or_default();
+            let hist = hist.unwrap_or_default().to_string();
+            
+            let bench_name = report.elements.bench.name;
             Ok(crate::model::Benchmark {
                 id: format!("{}-{}-{}", commit_hash, &bench_name, &created_at),
                 created_at: created_at.clone(),

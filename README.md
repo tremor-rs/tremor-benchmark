@@ -1,8 +1,2 @@
-** tremor-benchmark **
 
-This repository contains code for our continuous integration system that enables our project
-benchmarks to be executed on a CNCF Cluster bare metal Equinix machine via github actions.
-
-This tool was conceived and developed by [Akshat Agarwal]([humancalico]) for the LFX Spring 2021 mentorship program.
-
-[humancalico]: https://github.com/humancalico
+required packages (ubuntu): apt install build-essential pkg-config libssl-dev sqlite3 libpq-dev libmysqlclient-dev libsqlite3-dev
