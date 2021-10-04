@@ -30,7 +30,7 @@ pub struct WholeReport {
 
 #[derive(Deserialize, Debug)]
 struct Reports {
-    bench: Vec<SingleReport>
+    bench: Vec<SingleReport>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -41,7 +41,7 @@ struct SingleReport {
 
 #[derive(Deserialize, Debug)]
 struct Element {
-    bench: Bench
+    bench: Bench,
 }
 
 #[derive(Deserialize, Debug)]
@@ -107,7 +107,6 @@ pub fn convert_into_relevant_data(
             let mbps = extract_throughput(r).ok_or(Error::Other("failed to get mbps"));
             let eps = extract_events(r).ok_or(Error::Other("failed to get eps"));
             let hist = extract_hist(r).ok_or(Error::Other("faild to get histogram"));
-            drop(r);
 
             if mbps.is_err() || eps.is_err() || hist.is_err() {
                 dbg!(&report);
@@ -116,7 +115,7 @@ pub fn convert_into_relevant_data(
             let mbps = mbps.unwrap_or_default();
             let eps = eps.unwrap_or_default();
             let hist = hist.unwrap_or_default().to_string();
-            
+
             let bench_name = report.elements.bench.name;
             Ok(crate::model::Benchmark {
                 id: format!("{}-{}-{}", commit_hash, &bench_name, &created_at),
