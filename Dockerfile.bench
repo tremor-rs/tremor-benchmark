@@ -22,7 +22,7 @@ RUN tar -xf $commithash.tar.gz
 
 RUN rm $commithash.tar.gz
 
-WORKDIR tremor-runtime-$commithash/
+WORKDIR /tremor-runtime-$commithash/
 
 RUN cargo build -p tremor-cli --release
 
@@ -30,8 +30,8 @@ RUN cargo build -p tremor-cli --release
 RUN cp target/release/tremor /usr/local/bin/
 
 # stdlib
-RUN mkdir -p /usr/share/tremor/lib
-RUN cp -r tremor-script/lib /usr/share/tremor/lib
+RUN mkdir -p /usr/share/tremor
+RUN cp -r tremor-script/lib /usr/share/tremor
 
 COPY run.sh .
 
