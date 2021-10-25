@@ -93,7 +93,11 @@ async fn run(
         (&Method::GET, "/bench") => {
             // FIXME: this is terrible
             let connection = establish_connection();
-            let res: Vec<Benchmark> = benchmarks.limit(100).load(&connection)?;
+            let mut res: Vec<Benchmark> = benchmarks
+                .order(created_at.desc())
+                .limit(100)
+                .load(&connection)?;
+            res.reverse();
             let res = serde_json::to_string(&res)?;
             Response::builder()
                 .status(StatusCode::OK)
