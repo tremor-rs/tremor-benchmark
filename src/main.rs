@@ -94,7 +94,7 @@ async fn run(
             // FIXME: this is terrible
             let connection = establish_connection();
             let mut res: Vec<Benchmark> = benchmarks
-                .filter(eps.gt(0.0))
+                // .filter(eps.gt(0.0))
                 .order(created_at.desc())
                 .limit(100)
                 .load(&connection)?;
