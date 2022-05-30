@@ -1,4 +1,4 @@
-FROM rust:1.55
+FROM rust:1.61
 
 RUN useradd -ms /bin/bash tremor
 
