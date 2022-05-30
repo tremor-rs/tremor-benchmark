@@ -19,6 +19,7 @@ use serde::Deserialize;
 use crate::error::Error;
 
 // TODO The name is horrible here. pls help
+#[allow(dead_code)]
 #[derive(Deserialize, Debug)]
 pub struct WholeReport {
     metadata: Metadata,
@@ -33,6 +34,7 @@ struct Reports {
     bench: Vec<SingleReport>,
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize, Debug)]
 struct SingleReport {
     description: String,
@@ -44,6 +46,7 @@ struct Element {
     bench: Bench,
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize, Debug)]
 struct Bench {
     name: String,
@@ -55,6 +58,7 @@ struct Bench {
 }
 
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 struct Evidence {
     #[serde(rename = "test: stdout")]
     stdout: String,
@@ -63,6 +67,7 @@ struct Evidence {
 }
 
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 struct Metadata {
     allocator: String,
     repository: String,
@@ -75,6 +80,7 @@ struct Metadata {
 }
 
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 struct Stats {
     command: Stat,
     all: Stat,
@@ -84,6 +90,7 @@ struct Stats {
 }
 
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 struct Stat {
     pass: u16,
     fail: u16,
